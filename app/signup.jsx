@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
+  TouchableOpacity,
   Animated,
   StyleSheet,
   Dimensions,
@@ -13,13 +13,16 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 
 const { width } = Dimensions.get("window");
 
 export default function Signup() {
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [area, setArea] = useState("");
   const [loading, setLoading] = useState(false);
 
   const buttonScale = useRef(new Animated.Value(1)).current;
@@ -32,9 +35,24 @@ export default function Signup() {
     }).start();
   };
 
+  const getLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Denied", "Allow location to auto-fill your area");
+      return;
+    }
+    let loc = await Location.getCurrentPositionAsync({});
+    setArea(`Lat: ${loc.coords.latitude.toFixed(4)}, Lon: ${loc.coords.longitude.toFixed(4)}`);
+  };
+
   const handleSignup = () => {
     if (!name.trim()) {
       Alert.alert("Missing Name", "Please enter your name");
+      return;
+    }
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      Alert.alert("Invalid Phone", "Please enter a valid 10-digit phone number");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,6 +62,10 @@ export default function Signup() {
     }
     if (password.length < 8) {
       Alert.alert("Weak Password", "Password must be at least 8 characters");
+      return;
+    }
+    if (!area) {
+      Alert.alert("Area Missing", "Please select your area");
       return;
     }
 
@@ -70,6 +92,15 @@ export default function Signup() {
 
         <TextInput
           style={styles.input}
+          placeholder="Phone Number"
+          placeholderTextColor="#999"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+        />
+
+        <TextInput
+          style={styles.input}
           placeholder="Email"
           placeholderTextColor="#999"
           value={email}
@@ -86,10 +117,24 @@ export default function Signup() {
           onChangeText={setPassword}
         />
 
-        <TouchableWithoutFeedback
+        {/* Location input with icon */}
+        <View style={styles.locationWrapper}>
+          <TextInput
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="Area"
+            placeholderTextColor="#999"
+            value={area}
+            onChangeText={setArea}
+          />
+          <TouchableOpacity onPress={getLocation} style={styles.locationIcon}>
+            <Ionicons name="location-outline" size={24} color="#2E7D32" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          onPress={handleSignup}
           onPressIn={() => animatePress(0.95)}
           onPressOut={() => animatePress(1)}
-          onPress={handleSignup}
         >
           <Animated.View style={[styles.button, { transform: [{ scale: buttonScale }] }]}>
             {loading ? (
@@ -101,15 +146,15 @@ export default function Signup() {
               </>
             )}
           </Animated.View>
-        </TouchableWithoutFeedback>
+        </TouchableOpacity>
 
-        <TouchableWithoutFeedback onPress={() => router.push("/login")}>
+        <TouchableOpacity onPress={() => router.push("/login")}>
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>
               Already have an account? <Text style={styles.loginHighlight}>Login</Text>
             </Text>
           </View>
-        </TouchableWithoutFeedback>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
@@ -156,6 +201,15 @@ const styles = StyleSheet.create({
     color: "#000",
     borderWidth: 1,
     borderColor: "#81C784",
+  },
+  locationWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  locationIcon: {
+    position: "absolute",
+    right: 20,
   },
   button: {
     flexDirection: "row",

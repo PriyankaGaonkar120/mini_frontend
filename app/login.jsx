@@ -16,6 +16,7 @@ const { width } = Dimensions.get("window");
 
 export default function Login() {
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
   const loginScale = new Animated.Value(1);
@@ -30,8 +31,13 @@ export default function Login() {
 
   const handleLogin = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[6-9]\d{9}$/; // Indian phone numbers
     if (!emailRegex.test(email)) {
       alert("Invalid Email");
+      return;
+    }
+    if (!phoneRegex.test(phone)) {
+      alert("Invalid Phone Number");
       return;
     }
     if (password.length < 8) {
@@ -45,7 +51,9 @@ export default function Login() {
     <LinearGradient colors={["#e8f5e9", "#ffffff"]} style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Login</Text>
-        <Text style={styles.subtitle}>Welcome back! Manage your waste collection</Text>
+        <Text style={styles.subtitle}>
+          Welcome back! Manage your waste collection
+        </Text>
 
         <TextInput
           style={styles.input}
@@ -54,6 +62,15 @@ export default function Login() {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Phone Number"
+          placeholderTextColor="#999"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
         />
 
         <TextInput
@@ -70,16 +87,24 @@ export default function Login() {
           onPressOut={() => animatePress(1)}
           onPress={handleLogin}
         >
-          <Animated.View style={[styles.button, { transform: [{ scale: loginScale }] }]}>
+          <Animated.View
+            style={[styles.button, { transform: [{ scale: loginScale }] }]}
+          >
             <Text style={styles.buttonText}>Login</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 5 }} />
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#fff"
+              style={{ marginLeft: 5 }}
+            />
           </Animated.View>
         </TouchableWithoutFeedback>
 
         <TouchableWithoutFeedback onPress={() => router.push("/signup")}>
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>
-              Don't have an account? <Text style={styles.signupHighlight}>Sign Up</Text>
+              Don't have an account?{" "}
+              <Text style={styles.signupHighlight}>Sign Up</Text>
             </Text>
           </View>
         </TouchableWithoutFeedback>
