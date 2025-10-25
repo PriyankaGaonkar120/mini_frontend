@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
@@ -50,6 +51,8 @@ export default function Login() {
         console.log("Token:", data.token);
         console.log("User:", data.user);
         Alert.alert("Welcome", `Hello ${data.user.name}!`);
+        // Save user in AsyncStorage
+        await AsyncStorage.setItem("user", JSON.stringify(data.user));
         router.replace("/dashboard");
       } else {
         Alert.alert("Error", data.message || "Login failed");
