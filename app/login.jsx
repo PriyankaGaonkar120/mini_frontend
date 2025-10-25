@@ -7,6 +7,7 @@ import {
   Animated,
   StyleSheet,
   Dimensions,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -15,7 +16,6 @@ import { Ionicons } from "@expo/vector-icons";
 const { width } = Dimensions.get("window");
 
 export default function Login() {
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
@@ -29,22 +29,35 @@ export default function Login() {
     }).start();
   };
 
-  const handleLogin = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[6-9]\d{9}$/; // Indian phone numbers
-    if (!emailRegex.test(email)) {
-      alert("Invalid Email");
-      return;
+  const handleSubmit = async () => {
+    try {
+      if (!phone) {
+        return Alert.alert("Error", "Please enter your phone number");
+      }
+      if (!password) {
+        return Alert.alert("Error", "Please enter your password");
+      }
+
+      const res = await fetch("http://192.168.77.205:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log("Token:", data.token);
+        console.log("User:", data.user);
+        Alert.alert("Welcome", `Hello ${data.user.name}!`);
+        router.replace("/dashboard");
+      } else {
+        Alert.alert("Error", data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Something went wrong");
     }
-    if (!phoneRegex.test(phone)) {
-      alert("Invalid Phone Number");
-      return;
-    }
-    if (password.length < 8) {
-      alert("Password must be at least 8 characters");
-      return;
-    }
-    router.replace("/dashboard");
   };
 
   return (
@@ -54,15 +67,6 @@ export default function Login() {
         <Text style={styles.subtitle}>
           Welcome back! Manage your waste collection
         </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
 
         <TextInput
           style={styles.input}
@@ -85,7 +89,7 @@ export default function Login() {
         <TouchableWithoutFeedback
           onPressIn={() => animatePress(0.95)}
           onPressOut={() => animatePress(1)}
-          onPress={handleLogin}
+          onPress={handleSubmit}
         >
           <Animated.View
             style={[styles.button, { transform: [{ scale: loginScale }] }]}

@@ -20,7 +20,6 @@ const { width } = Dimensions.get("window");
 export default function Signup() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [area, setArea] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,35 +44,38 @@ export default function Signup() {
     setArea(`Lat: ${loc.coords.latitude.toFixed(4)}, Lon: ${loc.coords.longitude.toFixed(4)}`);
   };
 
-  const handleSignup = () => {
-    if (!name.trim()) {
-      Alert.alert("Missing Name", "Please enter your name");
-      return;
-    }
+  const handleSignup = async () => {
+    // Frontend validation
+    if (!name.trim()) return Alert.alert("Missing Name", "Please enter your name");
     const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-      Alert.alert("Invalid Phone", "Please enter a valid 10-digit phone number");
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert("Invalid Email", "Please enter a valid email address");
-      return;
-    }
-    if (password.length < 8) {
-      Alert.alert("Weak Password", "Password must be at least 8 characters");
-      return;
-    }
-    if (!area) {
-      Alert.alert("Area Missing", "Please select your area");
-      return;
-    }
+    if (!phoneRegex.test(phone)) return Alert.alert("Invalid Phone", "Please enter a valid 10-digit phone number");
+    if (password.length < 8) return Alert.alert("Weak Password", "Password must be at least 8 characters");
+    if (!area) return Alert.alert("Area Missing", "Please select your area");
 
-    setLoading(true);
-    setTimeout(() => {
+    try {
+      setLoading(true);
+
+      // Call backend API
+      const response = await fetch("http://192.168.77.205:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, password, area }),
+      });
+
+      const data = await response.json();
       setLoading(false);
-      router.replace("/dashboard");
-    }, 1500);
+
+      if (!response.ok) {
+        Alert.alert("Signup Failed", data.message || "Something went wrong");
+        return;
+      }
+
+      Alert.alert("Success", "User registered successfully");
+      router.replace("/login"); // Redirect to login
+    } catch (err) {
+      setLoading(false);
+      Alert.alert("Error", err.message);
+    }
   };
 
   return (
@@ -89,7 +91,6 @@ export default function Signup() {
           value={name}
           onChangeText={setName}
         />
-
         <TextInput
           style={styles.input}
           placeholder="Phone Number"
@@ -98,16 +99,6 @@ export default function Signup() {
           onChangeText={setPhone}
           keyboardType="phone-pad"
         />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-
         <TextInput
           style={styles.input}
           placeholder="Password"
@@ -117,7 +108,6 @@ export default function Signup() {
           onChangeText={setPassword}
         />
 
-        {/* Location input with icon */}
         <View style={styles.locationWrapper}>
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
@@ -179,19 +169,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#2E7D32",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#388E3C",
-    marginBottom: 25,
-    textAlign: "center",
-  },
+  title: { fontSize: 28, fontWeight: "bold", color: "#2E7D32", marginBottom: 10, textAlign: "center" },
+  subtitle: { fontSize: 14, color: "#388E3C", marginBottom: 25, textAlign: "center" },
   input: {
     backgroundColor: "#f1f8e9",
     paddingHorizontal: 20,
@@ -202,39 +181,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#81C784",
   },
-  locationWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  locationIcon: {
-    position: "absolute",
-    right: 20,
-  },
-  button: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#2E7D32",
-    paddingVertical: 15,
-    borderRadius: 30,
-    marginBottom: 15,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  loginContainer: {
-    marginTop: 10,
-    alignItems: "center",
-  },
-  loginText: {
-    color: "#555",
-    fontSize: 14,
-  },
-  loginHighlight: {
-    color: "#2E7D32",
-    fontWeight: "bold",
-  },
+  locationWrapper: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
+  locationIcon: { position: "absolute", right: 20 },
+  button: { flexDirection: "row", justifyContent: "center", alignItems: "center", backgroundColor: "#2E7D32", paddingVertical: 15, borderRadius: 30, marginBottom: 15 },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  loginContainer: { marginTop: 10, alignItems: "center" },
+  loginText: { color: "#555", fontSize: 14 },
+  loginHighlight: { color: "#2E7D32", fontWeight: "bold" },
 });
