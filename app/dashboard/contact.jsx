@@ -21,6 +21,9 @@ export default function Contact() {
   const [feedbackText, setFeedbackText] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  
+  const BASE_URI= `http://localhost:5000`;
 
   // ✅ Fetch phone number from AsyncStorage when screen opens
 useEffect(() => {
@@ -125,7 +128,7 @@ useEffect(() => {
 
     try {
       setLoading(true);
-      await axios.post("http://192.168.77.205:5000/api/feedback", {
+      await axios.post(`${BASE_URI}/api/feedback`, {
         phoneNumber,
         message: feedbackText,
       });
@@ -144,7 +147,7 @@ useEffect(() => {
       <Text style={styles.header}>Support & Contact</Text>
 
       {/* Quick Actions */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
+      {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
         {quickActions.map((item) => (
           <AnimatedTouchable
             key={item.id}
@@ -156,7 +159,7 @@ useEffect(() => {
             <Text style={[styles.quickActionText, { color: item.color }]}>{item.title}</Text>
           </AnimatedTouchable>
         ))}
-      </ScrollView>
+      </ScrollView> */}
 
       {/* Contact Cards */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>

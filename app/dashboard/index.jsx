@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,97 @@ import {
   ScrollView,
   StyleSheet,
   Animated,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const BASE_URI = "http://localhost:5000";
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [payment, setPayment] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Get stored phone number
+  useEffect(() => {
+    const getUserPhone = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem("user");
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          if (userData.phone) {
+            setPhoneNumber(userData.phone);
+          } else {
+            Alert.alert("Error", "Phone number not found in your account.");
+          }
+        } else {
+          Alert.alert("Error", "No user found. Please login again.");
+          router.replace("/login");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        Alert.alert("Error", "Something went wrong. Please login again.");
+        router.replace("/login");
+      }
+    };
+    getUserPhone();
+  }, []);
+
+  // ✅ Fetch notifications + payment
+  useEffect(() => {
+    if (!phoneNumber) return;
+
+    const fetchData = async () => {
+      try {
+        // 🔹 Get payment info
+        const paymentRes = await axios.get(
+          `${BASE_URI}/api/payments/current/${phoneNumber}`
+        );
+        setPayment(paymentRes.data); // directly sets the returned object
+
+        // 🔹 Get notifications (optional)
+        const notifRes = await axios.get(
+          `${BASE_URI}/api/notifications/${phoneNumber}`
+        );
+        setNotifications(notifRes.data);
+      } catch (err) {
+        console.error("Error fetching data:", err.message);
+        Alert.alert("Error", "Failed to load data from server.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [phoneNumber]);
+
+  const handlePayment = () => {
+    Alert.alert("Payment", "Payment functionality coming soon 💳");
+  };
+
   const quickActions = [
     { id: 1, title: "Help & FAQ", icon: "help-circle-outline", color: "#15803d" },
     { id: 2, title: "Chat Support", icon: "chatbubbles-outline", color: "#15803d" },
     { id: 3, title: "Report Missed Pickup", icon: "alert-circle-outline", color: "#EF4444" },
     { id: 4, title: "Request Extra Pickup", icon: "add-circle-outline", color: "#10B981" },
-    { id: 5, title: "Check Payment Status", icon: "wallet-outline", color: "#3B82F6" },
+    // { id: 5, title: "Check Payment Status", icon: "wallet-outline", color: "#3B82F6" },
   ];
 
   const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#16a34a" />
+        <Text style={{ color: "#166534", marginTop: 10 }}>Loading dashboard...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -31,49 +109,81 @@ export default function Dashboard() {
           </Text>
         </View>
 
-        {/* Billing Summary Card */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Billing Summary</Text>
-            <Ionicons name="wallet-outline" size={26} color="#166534" />
+        {/* ✅ Billing Summary Card */}
+        {payment && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Billing Summary</Text>
+              <Ionicons name="wallet-outline" size={26} color="#166534" />
+            </View>
+
+            <View style={styles.cardContent}>
+              <Text style={styles.cardText}>Monthly Fee: ₹{payment.amount}</Text>
+              <Text style={styles.cardText}>Month: {payment.month}</Text>
+              <Text style={styles.cardText}>
+                Due Date: {new Date(payment.dueDate).toDateString()}
+              </Text>
+              <Text
+                style={[
+                  styles.cardText,
+                  {
+                    color:
+                      payment.status === "Paid" ? "#16a34a" : "#dc2626",
+                    fontWeight: "700",
+                  },
+                ]}
+              >
+                Status: {payment.status === "Paid" ? "✅ Paid" : "⏳ Pending"}
+              </Text>
+            </View>
+
+            {/* 🔹 Show button only if Pending */}
+            {payment.status === "Pending" && (
+              <TouchableOpacity style={styles.cardButton} onPress={handlePayment}>
+                <Ionicons name="cash-outline" size={20} color="#fff" />
+                <Text style={styles.cardButtonText}>Make Payment</Text>
+              </TouchableOpacity>
+            )}
           </View>
+        )}
 
-          <View style={styles.cardContent}>
-            <Text style={styles.cardText}>Monthly Fee: ₹300</Text>
-            <Text style={styles.cardText}>Due Date: 25 Oct 2025</Text>
-            <Text style={[styles.cardText, { color: "green", fontWeight: "700" }]}>
-              Status: ✅ Paid
-            </Text>
-          </View>
-
-          {/* <TouchableOpacity style={styles.cardButton}>
-            <Ionicons name="cash-outline" size={20} color="#fff" />
-            <Text style={styles.cardButtonText}>Make Payment</Text>
-          </TouchableOpacity> */}
-        </View>
-
-        {/* Notifications Section */}
-        <View style={styles.card}>
+        {/* Notifications */}
+        {/* <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Notifications</Text>
             <Ionicons name="notifications-outline" size={24} color="#166534" />
           </View>
 
-          <View style={styles.notificationItem}>
-            <Text style={styles.notificationTitle}>♻️ Waste Collection Scheduled</Text>
-            <Text style={styles.notificationTime}>Tomorrow at 9:00 AM</Text>
-          </View>
+          {notifications.length > 0 ? (
+            notifications.map((note, index) => (
+              <View key={index} style={styles.notificationItem}>
+                <Text style={styles.notificationTitle}>{note.title}</Text>
+                <Text style={styles.notificationTime}>{note.time}</Text>
+              </View>
+            ))
+          ) : (
+            <>
+              <View style={styles.notificationItem}>
+                <Text style={styles.notificationTitle}>♻️ Waste Collection Scheduled</Text>
+                <Text style={styles.notificationTime}>Tomorrow at 9:00 AM</Text>
+              </View>
+              <View style={styles.notificationItem}>
+                <Text style={styles.notificationTitle}>⚠️ Payment Reminder</Text>
+                <Text style={styles.notificationTime}>
+                  Due on {new Date(payment?.dueDate).toDateString()}
+                </Text>
+              </View>
+            </>
+          )}
 
-          <View style={styles.notificationItem}>
-            <Text style={styles.notificationTitle}>⚠️ Payment Reminder</Text>
-            <Text style={styles.notificationTime}>Due on 25 Oct 2025</Text>
-          </View>
-
-          <TouchableOpacity style={styles.viewAll}>
+          <TouchableOpacity
+            style={styles.viewAll}
+            onPress={() => router.push("/dashboard/notification")}
+          >
             <Text style={styles.viewAllText}>View All</Text>
             <Ionicons name="chevron-forward" size={18} color="#16a34a" />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Quick Actions */}
         <View>
@@ -94,7 +204,7 @@ export default function Dashboard() {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
+      {/* Floating Chat Button */}
       <AnimatedTouchable
         style={styles.fab}
         activeOpacity={0.8}
@@ -111,7 +221,6 @@ const styles = StyleSheet.create({
   header: { marginBottom: 20, paddingHorizontal: 20 },
   headerTitle: { fontSize: 28, fontWeight: "800", color: "#166534" },
   headerSubtitle: { fontSize: 14, color: "#4B5563", marginTop: 4 },
-
   card: {
     backgroundColor: "#fff",
     borderRadius: 24,
@@ -139,13 +248,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cardButtonText: { color: "#fff", fontWeight: "600", fontSize: 16, marginLeft: 6 },
-
   notificationItem: { marginBottom: 12 },
   notificationTitle: { fontSize: 14, fontWeight: "600", color: "#374151" },
   notificationTime: { fontSize: 12, color: "#6B7280", marginTop: 2 },
   viewAll: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   viewAllText: { color: "#16a34a", fontWeight: "600", fontSize: 14 },
-
   sectionTitle: { fontSize: 18, fontWeight: "700", color: "#166534", paddingHorizontal: 20, marginBottom: 10 },
   quickActionButton: {
     width: 140,
@@ -162,7 +269,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   quickActionText: { fontSize: 12, fontWeight: "600", marginTop: 6, textAlign: "center" },
-
   fab: {
     position: "absolute",
     bottom: 25,

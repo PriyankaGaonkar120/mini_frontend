@@ -22,6 +22,8 @@ export default function Login() {
 
   const loginScale = new Animated.Value(1);
 
+  const BASE_URI= `http://localhost:5000`;
+
   const animatePress = (toValue) => {
     Animated.spring(loginScale, {
       toValue,
@@ -39,7 +41,7 @@ export default function Login() {
         return Alert.alert("Error", "Please enter your password");
       }
 
-      const res = await fetch("http://192.168.77.205:5000/api/auth/login", {
+      const res = await fetch(`${BASE_URI}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, password }),

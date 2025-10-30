@@ -24,6 +24,9 @@ export default function Signup() {
   const [area, setArea] = useState("");
   const [loading, setLoading] = useState(false);
 
+  
+  const BASE_URI= `http://localhost:5000`;
+
   const buttonScale = useRef(new Animated.Value(1)).current;
 
   const animatePress = (toValue) => {
@@ -56,12 +59,12 @@ export default function Signup() {
       setLoading(true);
 
       // Call backend API
-      const response = await fetch("http://192.168.77.205:5000/api/auth/register", {
+      const response = await fetch(`${BASE_URI}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, phone, password, area }),
       });
-
+      
       const data = await response.json();
       setLoading(false);
 

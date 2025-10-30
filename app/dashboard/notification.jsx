@@ -1,50 +1,87 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { useRouter } from "expo-router";
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Pickup Reminder",
-      message: "Your waste collection is scheduled for tomorrow at 9:00 AM.",
-      icon: "calendar-outline",
-      time: "2 hrs ago",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Payment Successful",
-      message: "You paid ₹120 for the monthly waste collection service.",
-      icon: "checkmark-circle-outline",
-      time: "5 hrs ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "New Update",
-      message: "A new version of the app is available. Update now for better performance!",
-      icon: "arrow-up-circle-outline",
-      time: "1 day ago",
-      unread: false,
-    },
-    {
-      id: 4,
-      title: "Feedback Received",
-      message: "Thanks for sharing your feedback with us!",
-      icon: "chatbubble-ellipses-outline",
-      time: "2 days ago",
-      unread: false,
-    },
-  ]);
+  const router = useRouter();
+  const BASE_URI = "http://localhost:5000";
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === id ? { ...notif, unread: false } : notif
-      )
+  // ✅ Fetch stored phone number
+  useEffect(() => {
+    const getUserPhone = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem("user");
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          if (userData.phone) {
+            setPhoneNumber(userData.phone);
+          } else {
+            Alert.alert("Error", "Phone number not found in your account.");
+          }
+        } else {
+          Alert.alert("Error", "No user found. Please login again.");
+          router.replace("/login");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        Alert.alert("Error", "Something went wrong. Please login again.");
+        router.replace("/login");
+      }
+    };
+    getUserPhone();
+  }, []);
+
+  // ✅ Fetch notifications when phone is available
+  useEffect(() => {
+    if (!phoneNumber) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const res = await axios.get(`${BASE_URI}/api/notifications/${phoneNumber}`);
+        setNotifications(res.data);
+      } catch (err) {
+        console.error("Error fetching notifications:", err.message);
+        Alert.alert("Error", "Failed to load notifications.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [phoneNumber]);
+
+  // ✅ Loading state
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#16a34a" />
+        <Text style={{ marginTop: 10 }}>Loading notifications...</Text>
+      </View>
     );
-  };
+  }
+
+  // ✅ Empty state (no dummy data)
+  if (notifications.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="notifications-off-outline" size={64} color="#9ca3af" />
+        <Text style={styles.emptyText}>No notifications yet</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -52,22 +89,26 @@ export default function Notifications() {
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {notifications.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={[styles.card, item.unread && styles.unreadCard]}
-            onPress={() => markAsRead(item.id)}
-          >
+          <View key={item._id} style={styles.card}>
             <View style={styles.iconContainer}>
-              <Ionicons name={item.icon} size={26} color="#25D366" />
-              {item.unread && <View style={styles.unreadDot} />}
+              <Ionicons
+                name={
+                  item.type === "payment"
+                    ? "checkmark-circle-outline"
+                    : item.type === "reminder"
+                    ? "calendar-outline"
+                    : "notifications-outline"
+                }
+                size={26}
+                color="#25D366"
+              />
             </View>
 
             <View style={styles.textContainer}>
-              <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.message}>{item.message}</Text>
-              <Text style={styles.time}>{item.time}</Text>
+              <Text style={styles.type}>{item.type}</Text>
             </View>
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
     </View>
@@ -83,10 +124,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 15,
   },
-  scrollContainer: {
-    paddingHorizontal: 15,
-    paddingBottom: 20,
-  },
+  scrollContainer: { paddingHorizontal: 15, paddingBottom: 20 },
   card: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -98,10 +136,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  unreadCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#16a34a",
-  },
   iconContainer: {
     width: 50,
     height: 50,
@@ -110,24 +144,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 15,
-    position: "relative",
-  },
-  unreadDot: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#EF4444",
   },
   textContainer: { flex: 1 },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 4,
+  message: { fontSize: 15, color: "#333", marginBottom: 6 },
+  type: { fontSize: 12, color: "#777" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  message: { fontSize: 14, color: "#555", marginBottom: 6 },
-  time: { fontSize: 12, color: "#999" },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#9ca3af",
+    marginTop: 8,
+  },
 });
