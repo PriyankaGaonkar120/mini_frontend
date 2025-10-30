@@ -57,9 +57,8 @@ export default function Dashboard() {
         const paymentRes = await axios.get(
           `${BASE_URI}/api/payments/current/${phoneNumber}`
         );
-        setPayment(paymentRes.data); // directly sets the returned object
+        setPayment(paymentRes.data);
 
-        // 🔹 Get notifications (optional)
         const notifRes = await axios.get(
           `${BASE_URI}/api/notifications/${phoneNumber}`
         );

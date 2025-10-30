@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -37,6 +38,30 @@ export default function Profile() {
     };
     getUser();
   }, []);
+
+  const pickImage = async () => {
+  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permissionResult.granted) {
+    Alert.alert("Permission required", "You need to grant photo permissions.");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.7,
+  });
+
+  if (!result.canceled) {
+    const selectedImage = result.assets[0].uri;
+    const updatedUser = { ...user, avatar: selectedImage };
+    setUser(updatedUser);
+    await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+  }
+};
+
 
   const handleLogout = async () => {
     try {
@@ -80,14 +105,23 @@ export default function Profile() {
       <Text style={styles.header}>My Profile</Text>
 
       <View style={styles.profileCard}>
-        <Image
-          source={{
-            uri:
-              user?.avatar ||
-              "https://png.pngtree.com/png-vector/20190516/ourlarge/pngtree-users-vector-icon-png-image_3725294.jpg",
-          }}
-          style={styles.profileImage}
-        />
+        <TouchableOpacity onPress={pickImage}>
+          {user?.avatar ? (
+            <Image
+              source={{ uri: user.avatar }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.blackCircle} />
+          )}
+          <Ionicons
+            name="camera-outline"
+            size={22}
+            color="#16a34a"
+            style={styles.cameraIcon}
+          />
+        </TouchableOpacity>
+
         <Text style={styles.name}>{user?.name || "N/A"}</Text>
         <Text style={styles.email}>{user?.email || "N/A"}</Text>
         <Text style={styles.address}>
@@ -171,6 +205,26 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
     marginBottom: 20,
+  },
+    cameraIcon: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 4,
+    elevation: 2,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  blackCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "black",
   },
   profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
   name: { fontSize: 20, fontWeight: "700", color: "#333" },
