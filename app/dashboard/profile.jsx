@@ -89,9 +89,7 @@ export default function Profile() {
     );
   }
 
-  const payments = user.payments || [
-    { id: 1, date: "10 Oct 2025", amount: "₹300", status: "Paid" },
-  ];
+  const payments = user.payments || [];
 
   const settings = [
     { id: 1, title: "Change Password", icon: "lock-closed-outline" },
@@ -147,7 +145,7 @@ export default function Profile() {
         </View>
       </View>
 
-      <View style={styles.infoSection}>
+      {/* <View style={styles.infoSection}>
         <Text style={styles.sectionTitle}>Payment History</Text>
         {payments.length > 0 ? (
           payments.map((pay) => (
@@ -167,7 +165,7 @@ export default function Profile() {
         ) : (
           <Text style={{ textAlign: "center", color: "#777" }}>No payment history</Text>
         )}
-      </View>
+      </View> */}
 
       <View style={styles.infoSection}>
         <Text style={styles.sectionTitle}>Account Settings</Text>
