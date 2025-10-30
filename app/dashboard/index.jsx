@@ -46,10 +46,10 @@ export default function Dashboard() {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.cardButton}>
+          {/* <TouchableOpacity style={styles.cardButton}>
             <Ionicons name="cash-outline" size={20} color="#fff" />
             <Text style={styles.cardButtonText}>Make Payment</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Notifications Section */}
