@@ -25,7 +25,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
 
   
-  const BASE_URI= 'http://10.209.250.161:5000';
+  const BASE_URI = 'http://10.209.250.161:5000';
 
   const buttonScale = useRef(new Animated.Value(1)).current;
 
