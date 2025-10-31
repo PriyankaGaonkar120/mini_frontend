@@ -91,27 +91,30 @@ useEffect(() => {
     },
   ];
 
-  const quickActions = [
+const quickActions = [
     {
       id: 1,
-      title: "Report Missed Collection",
-      icon: "alert-circle-outline",
-      color: "#EF4444",
-      action: () => alert("Report submitted!"),
+      title: 'Help & FAQ',
+      icon: 'help-circle-outline',
+      color: '#15803d',
     },
     {
       id: 2,
-      title: "Request Extra Pickup",
-      icon: "add-circle-outline",
-      color: "#10B981",
-      action: () => alert("Request submitted!"),
+      title: 'Chat Support',
+      icon: 'chatbubbles-outline',
+      color: '#15803d',
     },
     {
       id: 3,
-      title: "Check Payment Status",
-      icon: "wallet-outline",
-      color: "#3B82F6",
-      action: () => alert("Payment status displayed!"),
+      title: 'Report Missed Pickup',
+      icon: 'alert-circle-outline',
+      color: '#EF4444',
+    },
+    {
+      id: 4,
+      title: 'Request Extra Pickup',
+      icon: 'add-circle-outline',
+      color: '#10B981',
     },
   ];
 
@@ -146,21 +149,6 @@ useEffect(() => {
     <View style={styles.container}>
       <Text style={styles.header}>Support & Contact</Text>
 
-      {/* Quick Actions */}
-      {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
-        {quickActions.map((item) => (
-          <AnimatedTouchable
-            key={item.id}
-            style={[styles.quickActionButton, { backgroundColor: `${item.color}20` }]}
-            activeOpacity={0.7}
-            onPress={item.action}
-          >
-            <Ionicons name={item.icon} size={28} color={item.color} />
-            <Text style={[styles.quickActionText, { color: item.color }]}>{item.title}</Text>
-          </AnimatedTouchable>
-        ))}
-      </ScrollView> */}
-
       {/* Contact Cards */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {contactOptions.map((item) => (
@@ -194,6 +182,24 @@ useEffect(() => {
             <Text style={styles.message}>Have suggestions or issues? Let us know!</Text>
           </View>
         </AnimatedTouchable>
+
+        {/* Quick Actions */}
+        <View style={{ marginBottom: 20 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 15 }}>
+            {quickActions.map((item) => (
+              <AnimatedTouchable
+                key={item.id}
+                style={[styles.quickActionButton, { backgroundColor: `${item.color}20` }]}
+                activeOpacity={0.7}
+                onPress={item.action}
+              >
+                <Ionicons name={item.icon} size={28} color={item.color} />
+                <Text style={[styles.quickActionText, { color: item.color }]}>{item.title}</Text>
+              </AnimatedTouchable>
+            ))}
+          </ScrollView>
+        </View>
+
       </ScrollView>
 
       {/* Feedback Popup Modal */}

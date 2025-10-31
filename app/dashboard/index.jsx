@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+// import RNUpiPayment from 'react-native-upi-payment';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -74,9 +75,25 @@ export default function Dashboard() {
     fetchData();
   }, [phoneNumber]);
 
-  const handlePayment = () => {
-    Alert.alert('Payment', 'Payment functionality coming soon 💳');
+  const handlePayment = async () => {
+    console.log("Mock Payment Success");
+    Alert.alert("Payment Successful", "Mock Transaction ID: 12345");
+    
+    // Update payment status locally or backend
+    await axios.post(`${BASE_URI}/api/payments`, {
+      phoneNumber,
+      amount: payment.amount,
+      month: payment.month,
+      dueDate: payment.dueDate,
+      status: "Paid",
+    });
+
+    const paymentRes = await axios.get(
+      `${BASE_URI}/api/payments/current/${phoneNumber}`
+    );
+    setPayment(paymentRes.data);
   };
+
 
   const handleReload = async () => {
     if (!phoneNumber) return;
@@ -98,34 +115,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-  const quickActions = [
-    {
-      id: 1,
-      title: 'Help & FAQ',
-      icon: 'help-circle-outline',
-      color: '#15803d',
-    },
-    {
-      id: 2,
-      title: 'Chat Support',
-      icon: 'chatbubbles-outline',
-      color: '#15803d',
-    },
-    {
-      id: 3,
-      title: 'Report Missed Pickup',
-      icon: 'alert-circle-outline',
-      color: '#EF4444',
-    },
-    {
-      id: 4,
-      title: 'Request Extra Pickup',
-      icon: 'add-circle-outline',
-      color: '#10B981',
-    },
-    // { id: 5, title: "Check Payment Status", icon: "wallet-outline", color: "#3B82F6" },
-  ];
 
   const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -219,73 +208,6 @@ export default function Dashboard() {
             )}
           </View>
         )}
-
-        {/* Notifications */}
-        {/* <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Notifications</Text>
-            <Ionicons name="notifications-outline" size={24} color="#166534" />
-          </View>
-
-          {notifications.length > 0 ? (
-            notifications.map((note, index) => (
-              <View key={index} style={styles.notificationItem}>
-                <Text style={styles.notificationTitle}>{note.title}</Text>
-                <Text style={styles.notificationTime}>{note.time}</Text>
-              </View>
-            ))
-          ) : (
-            <>
-              <View style={styles.notificationItem}>
-                <Text style={styles.notificationTitle}>♻️ Waste Collection Scheduled</Text>
-                <Text style={styles.notificationTime}>Tomorrow at 9:00 AM</Text>
-              </View>
-              <View style={styles.notificationItem}>
-                <Text style={styles.notificationTitle}>⚠️ Payment Reminder</Text>
-                <Text style={styles.notificationTime}>
-                  Due on {new Date(payment?.dueDate).toDateString()}
-                </Text>
-              </View>
-            </>
-          )}
-
-          <TouchableOpacity
-            style={styles.viewAll}
-            onPress={() => router.push("/dashboard/notification")}
-          >
-            <Text style={styles.viewAllText}>View All</Text>
-            <Ionicons name="chevron-forward" size={18} color="#16a34a" />
-          </TouchableOpacity>
-        </View> */}
-
-        {/* Quick Actions */}
-        <View>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 20 }}>
-            {quickActions.map((item) => (
-              <AnimatedTouchable
-                key={item.id}
-                style={[
-                  styles.quickActionButton,
-                  { backgroundColor: `${item.color}20` },
-                ]}
-                activeOpacity={0.7}
-                onPress={() => alert(`${item.title} pressed!`)}>
-                <Ionicons
-                  name={item.icon}
-                  size={28}
-                  color={item.color}
-                />
-                <Text style={[styles.quickActionText, { color: item.color }]}>
-                  {item.title}
-                </Text>
-              </AnimatedTouchable>
-            ))}
-          </ScrollView>
-        </View>
       </ScrollView>
 
       {/* Floating Chat Button */}

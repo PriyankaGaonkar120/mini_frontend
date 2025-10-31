@@ -65,11 +65,33 @@ export default function Notifications() {
     fetchNotifications();
   }, [phoneNumber]);
 
+  // auto reload time ago 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNotifications((prev) => [...prev]); // triggers re-render
+    }, 60000); // every 1 minute
+    return () => clearInterval(interval);
+  }, []);
+
+
   // 🔄 Handle reload
   const handleReload = async () => {
     setRefreshing(true);
     await fetchNotifications();
   };
+
+  // time 
+  const timeAgo = (dateString) => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = Math.floor((now - date) / 1000); // difference in seconds
+
+  if (diff < 60) return `${diff} sec ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? "s" : ""} ago`;
+};
+
 
   // ✅ Loading state
   if (loading) {
@@ -136,7 +158,7 @@ export default function Notifications() {
             <View style={styles.textContainer}>
               <Text style={styles.message}>{item.message}</Text>
               <Text style={styles.type}>
-                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                {item.type.charAt(0).toUpperCase() + item.type.slice(1)} • {timeAgo(item.createdAt)}
               </Text>
             </View>
           </View>
