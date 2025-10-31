@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,17 +6,19 @@ import {
   Animated,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
 export default function Index() {
-  // Animation refs
   const loginScale = useRef(new Animated.Value(1)).current;
   const signupScale = useRef(new Animated.Value(1)).current;
+  const [loading, setLoading] = useState(true);
 
   // Function for press in/out animations
   const animatePress = (scaleRef, toValue) => {
@@ -26,6 +28,33 @@ export default function Index() {
       useNativeDriver: true,
     }).start();
   };
+
+  // ✅ Check if user already logged in
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const user = await AsyncStorage.getItem("user");
+        if (user) {
+          router.replace("/dashboard"); // go directly to dashboard
+        }
+      } catch (error) {
+        console.error("Error checking login status:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkLoginStatus();
+  }, []);
+
+  // Show loader while checking login status
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: "#fff" }]}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <LinearGradient colors={["#ffffff", "#ffffff"]} style={styles.container}>
@@ -51,7 +80,9 @@ export default function Index() {
           onPressOut={() => animatePress(signupScale, 1)}
           onPress={() => router.push("/signup")}
         >
-          <Animated.View style={[styles.buttonOutline, { transform: [{ scale: signupScale }] }]}>
+          <Animated.View
+            style={[styles.buttonOutline, { transform: [{ scale: signupScale }] }]}
+          >
             <Text style={styles.buttonOutlineText}>Sign Up</Text>
             <Ionicons name="arrow-forward" size={20} color="black" style={styles.icon} />
           </Animated.View>

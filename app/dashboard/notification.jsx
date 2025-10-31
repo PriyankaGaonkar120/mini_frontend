@@ -6,6 +6,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,10 +15,11 @@ import { useRouter } from "expo-router";
 
 export default function Notifications() {
   const router = useRouter();
-  const BASE_URI= 'http://10.209.250.161:5000';
+  const BASE_URI = "http://10.209.250.161:5000";
   const [phoneNumber, setPhoneNumber] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ✅ Fetch stored phone number
   useEffect(() => {
@@ -44,49 +46,76 @@ export default function Notifications() {
     getUserPhone();
   }, []);
 
-  // ✅ Fetch notifications when phone is available
-  useEffect(() => {
+  // ✅ Fetch notifications
+  const fetchNotifications = async () => {
     if (!phoneNumber) return;
+    try {
+      const res = await axios.get(`${BASE_URI}/api/notifications/${phoneNumber}`);
+      setNotifications(res.data);
+    } catch (err) {
+      console.error("Error fetching notifications:", err.message);
+      Alert.alert("Error", "Failed to load notifications.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-    const fetchNotifications = async () => {
-      try {
-        const res = await axios.get(`${BASE_URI}/api/notifications/${phoneNumber}`);
-        setNotifications(res.data);
-      } catch (err) {
-        console.error("Error fetching notifications:", err.message);
-        Alert.alert("Error", "Failed to load notifications.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchNotifications();
   }, [phoneNumber]);
+
+  // 🔄 Handle reload
+  const handleReload = async () => {
+    setRefreshing(true);
+    await fetchNotifications();
+  };
 
   // ✅ Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#16a34a" />
-        <Text style={{ marginTop: 10 }}>Loading notifications...</Text>
+        <Text style={{ marginTop: 10, color: "#166534" }}>Loading notifications...</Text>
       </View>
     );
   }
 
-  // ✅ Empty state (no dummy data)
+  // ✅ Empty state
   if (notifications.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="notifications-off-outline" size={64} color="#9ca3af" />
+        <Ionicons name="notifications-off-outline" size={80} color="#9ca3af" />
         <Text style={styles.emptyText}>No notifications yet</Text>
+        <TouchableOpacity style={styles.reloadButton} onPress={handleReload}>
+          {refreshing ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="reload" size={18} color="#fff" />
+              <Text style={styles.reloadText}>Reload</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Notifications</Text>
+      {/* Header with reload icon */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Notifications</Text>
+        <TouchableOpacity onPress={handleReload}>
+          {refreshing ? (
+            <ActivityIndicator size="small" color="#166534" />
+          ) : (
+            <Ionicons name="reload" size={26} color="#166534" />
+          )}
+        </TouchableOpacity>
+      </View>
 
+      {/* Notifications list */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {notifications.map((item) => (
           <View key={item._id} style={styles.card}>
@@ -100,13 +129,15 @@ export default function Notifications() {
                     : "notifications-outline"
                 }
                 size={26}
-                color="#25D366"
+                color="#16a34a"
               />
             </View>
 
             <View style={styles.textContainer}>
               <Text style={styles.message}>{item.message}</Text>
-              <Text style={styles.type}>{item.type}</Text>
+              <Text style={styles.type}>
+                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+              </Text>
             </View>
           </View>
         ))}
@@ -116,38 +147,44 @@ export default function Notifications() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9f9f9", paddingTop: 50 },
+  container: { flex: 1, backgroundColor: "#F8FAF9", paddingTop: 50 },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
   header: {
     fontSize: 28,
-    fontWeight: "bold",
-    color: "#2e7d32",
-    textAlign: "center",
-    marginBottom: 15,
+    fontWeight: "800",
+    color: "#166534",
   },
   scrollContainer: { paddingHorizontal: 15, paddingBottom: 20 },
   card: {
     flexDirection: "row",
     backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 15,
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 12,
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
   },
   iconContainer: {
     width: 50,
     height: 50,
-    backgroundColor: "#e8f5e9",
+    backgroundColor: "#DCFCE7",
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 15,
   },
-  textContainer: { flex: 1 },
-  message: { fontSize: 15, color: "#333", marginBottom: 6 },
-  type: { fontSize: 12, color: "#777" },
+  textContainer: { flex: 1, justifyContent: "center" },
+  message: { fontSize: 15, color: "#1F2937", fontWeight: "500", marginBottom: 6 },
+  type: { fontSize: 12, color: "#6B7280" },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -157,10 +194,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 16,
     color: "#9ca3af",
     marginTop: 8,
+    marginBottom: 15,
   },
+  reloadButton: {
+    flexDirection: "row",
+    backgroundColor: "#16a34a",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    alignItems: "center",
+  },
+  reloadText: { color: "#fff", fontWeight: "600", fontSize: 14, marginLeft: 6 },
 });
