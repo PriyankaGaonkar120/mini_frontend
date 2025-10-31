@@ -23,7 +23,7 @@ export default function Contact() {
   const [loading, setLoading] = useState(false);
   
   
-  const BASE_URI= `http://localhost:5000`;
+  const BASE_URI= 'http://10.209.250.161:5000';
 
   // ✅ Fetch phone number from AsyncStorage when screen opens
 useEffect(() => {

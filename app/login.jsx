@@ -22,7 +22,7 @@ export default function Login() {
 
   const loginScale = new Animated.Value(1);
 
-  const BASE_URI= `http://localhost:5000`;
+  const BASE_URI= 'http://10.209.250.161:5000';
 
   const animatePress = (toValue) => {
     Animated.spring(loginScale, {

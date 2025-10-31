@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 
 export default function Notifications() {
   const router = useRouter();
-  const BASE_URI = "http://localhost:5000";
+  const BASE_URI= 'http://10.209.250.161:5000';
   const [phoneNumber, setPhoneNumber] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
