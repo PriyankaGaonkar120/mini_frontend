@@ -56,7 +56,8 @@ export default function Login() {
         Alert.alert("Welcome", `Hello ${data.user.name}!`);
         // Save user in AsyncStorage
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
-        router.replace("/dashboard");
+        router.replace("/admin");
+        // dashboard for user , admin and collector
       } else {
         Alert.alert("Error", data.message || "Login failed");
       }
