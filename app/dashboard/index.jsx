@@ -17,7 +17,7 @@ import axios from 'axios';
 
 export default function Dashboard() {
   const router = useRouter();
-  const BASE_URI = 'http://10.209.250.161:5000';
+  const BASE_URI = 'http://localhost:5000';
   const [phoneNumber, setPhoneNumber] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [payment, setPayment] = useState(null);

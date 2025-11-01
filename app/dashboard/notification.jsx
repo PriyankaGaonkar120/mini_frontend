@@ -15,11 +15,12 @@ import { useRouter } from "expo-router";
 
 export default function Notifications() {
   const router = useRouter();
-  const BASE_URI = 'http://10.209.250.161:5000';
+  const BASE_URI = "http://localhost:5000";
   const [phoneNumber, setPhoneNumber] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState("all"); // ✅ Filter state
 
   // ✅ Fetch stored phone number
   useEffect(() => {
@@ -65,14 +66,13 @@ export default function Notifications() {
     fetchNotifications();
   }, [phoneNumber]);
 
-  // auto reload time ago 
+  // auto reload time ago
   useEffect(() => {
     const interval = setInterval(() => {
       setNotifications((prev) => [...prev]); // triggers re-render
-    }, 60000); // every 1 minute
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
-
 
   // 🔄 Handle reload
   const handleReload = async () => {
@@ -80,18 +80,22 @@ export default function Notifications() {
     await fetchNotifications();
   };
 
-  // time 
+  // ⏰ timeAgo
   const timeAgo = (dateString) => {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diff = Math.floor((now - date) / 1000); // difference in seconds
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return `${diff} sec ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+    return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? "s" : ""} ago`;
+  };
 
-  if (diff < 60) return `${diff} sec ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
-  return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? "s" : ""} ago`;
-};
-
+  // ✅ Filtered notifications
+  const filteredNotifications =
+    filter === "all"
+      ? notifications
+      : notifications.filter((n) => n.type === filter);
 
   // ✅ Loading state
   if (loading) {
@@ -125,7 +129,7 @@ export default function Notifications() {
 
   return (
     <View style={styles.container}>
-      {/* Header with reload icon */}
+      {/* Header */}
       <View style={styles.headerContainer}>
         <Text style={styles.header}>Notifications</Text>
         <TouchableOpacity onPress={handleReload}>
@@ -137,33 +141,67 @@ export default function Notifications() {
         </TouchableOpacity>
       </View>
 
-      {/* Notifications list */}
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {notifications.map((item) => (
-          <View key={item._id} style={styles.card}>
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name={
-                  item.type === "payment"
-                    ? "checkmark-circle-outline"
-                    : item.type === "reminder"
-                    ? "calendar-outline"
-                    : "notifications-outline"
-                }
-                size={26}
-                color="#16a34a"
-              />
-            </View>
+      {/* ✅ Filter Bar */}
+<View style={styles.filterContainer}>
+  {["all", "payment", "Feedback"].map((type) => (
+    <TouchableOpacity
+      key={type}
+      style={[
+        styles.filterButton,
+        filter === type && styles.filterButtonActive,
+      ]}
+      onPress={() => setFilter(type)}
+    >
+      <Text
+        style={[
+          styles.filterText,
+          filter === type && styles.filterTextActive,
+        ]}
+      >
+        {type.charAt(0).toUpperCase() + type.slice(1)}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</View>
 
-            <View style={styles.textContainer}>
-              <Text style={styles.message}>{item.message}</Text>
-              <Text style={styles.type}>
-                {item.type.charAt(0).toUpperCase() + item.type.slice(1)} • {timeAgo(item.createdAt)}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+      {/* Notifications list */}
+      {/* ✅ Show message if no notifications under current filter */}
+{filteredNotifications.length === 0 ? (
+  <View style={styles.emptyContainer}>
+    <Ionicons name="notifications-off-outline" size={60} color="#9ca3af" />
+    <Text style={styles.emptyText}>
+      No {filter !== "all" ? `${filter} ` : ""}notifications found
+    </Text>
+  </View>
+) : (
+  <ScrollView contentContainerStyle={styles.scrollContainer}>
+    {filteredNotifications.map((item) => (
+      <View key={item._id} style={styles.card}>
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name={
+              item.type === "payment"
+                ? "card-outline"
+                : item.type === "feedback"
+                ? "chatbubble-outline"
+                : "notifications-outline"
+            }
+            size={26}
+            color="#16a34a"
+          />
+        </View>
+
+        <View style={styles.textContainer}>
+          <Text style={styles.message}>{item.message}</Text>
+          <Text style={styles.type}>
+            {item.type.charAt(0).toUpperCase() + item.type.slice(1)} •{" "}
+            {timeAgo(item.createdAt)}
+          </Text>
+        </View>
+      </View>
+    ))}
+  </ScrollView>
+)}
     </View>
   );
 }
@@ -175,13 +213,36 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  header: { fontSize: 28, fontWeight: "800", color: "#166534" },
+
+  // ✅ Filter Styles
+  filterContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 15,
   },
-  header: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#166534",
+  filterButton: {
+    borderWidth: 1,
+    borderColor: "#16a34a",
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    marginHorizontal: 5,
   },
+  filterButtonActive: {
+    backgroundColor: "#16a34a",
+  },
+  filterText: {
+    fontSize: 14,
+    color: "#166534",
+    fontWeight: "600",
+  },
+  filterTextActive: {
+    color: "#fff",
+  },
+
   scrollContainer: { paddingHorizontal: 15, paddingBottom: 20 },
   card: {
     flexDirection: "row",
@@ -207,23 +268,9 @@ const styles = StyleSheet.create({
   textContainer: { flex: 1, justifyContent: "center" },
   message: { fontSize: 15, color: "#1F2937", fontWeight: "500", marginBottom: 6 },
   type: { fontSize: 12, color: "#6B7280" },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#9ca3af",
-    marginTop: 8,
-    marginBottom: 15,
-  },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
+  emptyText: { fontSize: 16, color: "#9ca3af", marginTop: 8, marginBottom: 15 },
   reloadButton: {
     flexDirection: "row",
     backgroundColor: "#16a34a",
