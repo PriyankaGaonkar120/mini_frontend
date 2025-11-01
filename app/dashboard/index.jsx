@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 // import RNUpiPayment from 'react-native-upi-payment';
+import { Calendar } from 'react-native-calendars';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -76,16 +77,16 @@ export default function Dashboard() {
   }, [phoneNumber]);
 
   const handlePayment = async () => {
-    console.log("Mock Payment Success");
-    Alert.alert("Payment Successful", "Mock Transaction ID: 12345");
-    
+    console.log('Mock Payment Success');
+    Alert.alert('Payment Successful', 'Mock Transaction ID: 12345');
+
     // Update payment status locally or backend
     await axios.post(`${BASE_URI}/api/payments`, {
       phoneNumber,
       amount: payment.amount,
       month: payment.month,
       dueDate: payment.dueDate,
-      status: "Paid",
+      status: 'Paid',
     });
 
     const paymentRes = await axios.get(
@@ -93,7 +94,6 @@ export default function Dashboard() {
     );
     setPayment(paymentRes.data);
   };
-
 
   const handleReload = async () => {
     if (!phoneNumber) return;
@@ -135,6 +135,14 @@ export default function Dashboard() {
       </View>
     );
   }
+  // Dummy pickup dates (formatted as yyyy-mm-dd)
+  const markedDates = {
+    '2025-11-03': { marked: true, selected: true, selectedColor: '#16a34a' },
+    '2025-11-07': { marked: true, selected: true, selectedColor: '#16a34a' },
+    '2025-11-10': { marked: true, selected: true, selectedColor: '#16a34a' },
+    '2025-11-18': { marked: true, selected: true, selectedColor: '#16a34a' },
+    '2025-11-25': { marked: true, selected: true, selectedColor: '#16a34a' },
+  };
 
   return (
     <View style={styles.container}>
@@ -159,6 +167,28 @@ export default function Dashboard() {
           <Text style={styles.headerSubtitle}>
             Manage your payments, updates, and support
           </Text>
+        </View>
+
+        {/* calender */}
+        <View style={styles.calendarCard}>
+          {/* <Text style={styles.cardTitle}>Pickup Schedule</Text> */}
+          <Calendar
+            current={'2025-11-01'}
+            markedDates={markedDates}
+            onMonthChange={(month) => console.log('Month changed:', month)}
+            theme={{
+              backgroundColor: '#fff',
+              calendarBackground: '#fff',
+              todayTextColor: '#166534',
+              monthTextColor: '#166534',
+              arrowColor: '#166534',
+              selectedDayBackgroundColor: '#16a34a',
+              selectedDayTextColor: '#fff',
+              textMonthFontWeight: 'bold',
+              textDayFontSize: 14,
+              textMonthFontSize: 18,
+            }}
+          />
         </View>
 
         {/* ✅ Billing Summary Card */}
@@ -228,7 +258,12 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAF9', paddingTop: 50 },
   header: { marginBottom: 20, paddingHorizontal: 20 },
-  headerTitle: { fontSize: 28, fontWeight: "800", color: "#166534", marginRight: 8 },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#166534',
+    marginRight: 8,
+  },
   headerSubtitle: { fontSize: 14, color: '#4B5563', marginTop: 4 },
   card: {
     backgroundColor: '#fff',
@@ -314,5 +349,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 5,
     elevation: 5,
+  },
+  calendarCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

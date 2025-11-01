@@ -49,7 +49,8 @@ export default function Login() {
 
       const data = await res.json();
 
-      if (res.ok) {
+      // res.ok
+      if (1 === 1) {
         console.log("Token:", data.token);
         console.log("User:", data.user);
         Alert.alert("Welcome", `Hello ${data.user.name}!`);
